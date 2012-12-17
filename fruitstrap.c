@@ -1,4 +1,5 @@
 //TODO: don't copy/mount DeveloperDiskImage.dmg if it's already done - Xcode checks this somehow
+// TODO Pass or detect right version of DiskImage. For now error-exits are suppressed
 
 #import <CoreFoundation/CoreFoundation.h>
 #include <unistd.h>
@@ -118,7 +119,7 @@ CFStringRef copy_device_support_path(AMDeviceRef device) {
     {
         CFRelease(path);
         PRINT("[ !! ] Unable to locate DeviceSupport directory.\n");
-        exit(1);
+        //exit(1);
     }
 
     return path;
@@ -154,6 +155,10 @@ CFStringRef copy_developer_disk_image_path(AMDeviceRef device) {
         path = CFStringCreateWithFormat(NULL, NULL, CFSTR("/Developer/Platforms/iPhoneOS.platform/DeviceSupport/Latest/DeveloperDiskImage.dmg"));
         found = path_exists(path);
     }
+    //if (!found) {
+    //    path = CFStringCreateWithFormat(NULL, NULL, CFSTR("/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/DeviceSupport/Latest/DeveloperDiskImage.dmg"));
+    //    found = path_exists(path);
+    //}
 
     CFRelease(version);
     CFRelease(build);
@@ -161,7 +166,7 @@ CFStringRef copy_developer_disk_image_path(AMDeviceRef device) {
     if (!found) {
         CFRelease(path);
         PRINT("[ !! ] Unable to locate DeviceSupport directory containing DeveloperDiskImage.dmg.\n");
-        exit(1);
+        //exit(1);
     }
 
     return path;
@@ -182,6 +187,10 @@ void mount_callback(CFDictionaryRef dict, int arg) {
 void mount_developer_image(AMDeviceRef device) {
     CFStringRef ds_path = copy_device_support_path(device);
     CFStringRef image_path = copy_developer_disk_image_path(device);
+    if( !image_path ) {
+        return;
+    }
+
     CFStringRef sig_path = CFStringCreateWithFormat(NULL, NULL, CFSTR("%@.signature"), image_path);
     CFRelease(ds_path);
 
@@ -213,7 +222,7 @@ void mount_developer_image(AMDeviceRef device) {
         PRINT("[ 95%%] Developer disk image already mounted\n");
     } else {
         PRINT("[ !! ] Unable to mount developer disk image. (%x)\n", result);
-        exit(1);
+        // exit(1);
     }
 
     CFRelease(image_path);
